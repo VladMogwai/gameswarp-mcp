@@ -44,10 +44,42 @@ https://store.steampowered.com/appreviewhistogram/<appid>?l=english
 
 ### Патчноуты и новости
 ```
-https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=<appid>&count=50
+https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=<appid>&count=1000
 ```
-`appnews.newsitems[]`: `title`, `date` (unix), `feedlabel`, `contents`, `url`.
-Патчи — это `feedlabel: "Community Announcements"`. Остальное — пресса.
+
+Поля записи: `gid`, `appid`, `title`, `url`, `is_external_url`, `author`,
+`contents`, `feedlabel`, `feedname`, `feed_type`, `date` (unix).
+
+**`gid`** — уникальный идентификатор записи. Ключ для дедупликации при повторной выкачке.
+
+**Разделять источники надо по `feed_type`, а не по `feedlabel`:**
+- `feed_type: 1` — анонс разработчика (`feedname` всегда `steam_community_announcements`)
+- `feed_type: 0` — пресса (`feedname` — конкретное издание)
+
+`feedlabel` для этого не годится: у прессы там больше десятка разных значений
+(PC Gamer, PCGamesN, Rock Paper Shotgun, VG247, SteamDB, GamingOnLinux, Gamemag.ru,
+eurogamer, Shacknews, pressakey.com, steam_release), а у анонсов строка может
+локализоваться.
+
+**Потолка в 500 нет.** `count=1000` для No Man's Sky вернул 715 — это вся история
+игры. Проси больше, чем ожидаешь, получишь сколько есть.
+
+**`maxlength` обрезает `contents`.** Не задавай его, если нужен полный текст.
+
+**Разметка в `contents` — две разные:**
+- у анонсов разработчика BBCode: `[p]`, `[url="..."]`, `[b]`
+- у прессы HTML: `<strong>`, `<a>`
+Чистить надо обе.
+
+**Объём.** Медиана `contents` — 1178 символов, максимум около 8000.
+Сто записей ≈ 174 КБ. Пять тысяч игр по сто записей ≈ **850 МБ**.
+Это ответ на вопрос, хватит ли файлов вместо базы: не хватит.
+
+**Пресса многоязычная.** Gamemag.ru пишет по-русски, остальные по-английски.
+Язык записи в ответе не указан — если он нужен, определять придётся самому.
+
+**Несуществующий appid → HTTP 403**, а не пустой список. То есть «игры нет» и
+«новостей нет» различимы. У DLC новости есть, как у обычных приложений.
 
 ### Похожие игры (эталон для evals)
 ```
