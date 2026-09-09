@@ -1,9 +1,9 @@
-# steam-signal-mcp — рабочая спека
+# gameswarp-mcp — рабочая спека
 
 MCP-сервер, дающий модели исследовать игры в Steam через то, что реально пишут
 игроки: отзывы, история рейтинга по месяцам, патчноуты и пресса.
 
-Это первый кусок проекта Steam Signal. Что строится дальше — в конце файла.
+Это первый кусок проекта Gameswarp. Что строится дальше — в конце файла.
 
 ## Правила игры
 
@@ -178,7 +178,7 @@ No Man's Sky просел рейтинг в октябре 2022». Прогон�
 - Публичный репозиторий (для публичных репо GitHub Actions бесплатны без лимита).
 - `npm publish`.
 
-**verify:** `npx steam-signal-mcp` работает у человека, который ничего про проект
+**verify:** `npx gameswarp-mcp` работает у человека, который ничего про проект
 не знает.
 
 ---
@@ -188,7 +188,7 @@ No Man's Sky просел рейтинг в октябре 2022». Прогон�
 После `npm run build`:
 
 ```
-claude mcp add steam -- node /Users/vladarefiev/Desktop/work/steam-signal/dist/index.js
+claude mcp add steam -- node /Users/vladarefiev/Desktop/work/gameswarp/dist/index.js
 ```
 
 Путь абсолютный — Claude Code запускает процесс не из папки проекта.

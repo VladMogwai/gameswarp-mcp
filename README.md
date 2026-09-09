@@ -1,4 +1,4 @@
-# steam-signal-mcp
+# gameswarp-mcp
 
 MCP server for investigating Steam games through what players actually write —
 reviews, review timelines and patch notes — instead of a single aggregate score.

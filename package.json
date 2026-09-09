@@ -1,11 +1,11 @@
 {
-  "name": "steam-signal-mcp",
+  "name": "gameswarp-mcp",
   "version": "0.0.0",
   "description": "MCP server for investigating Steam games through what players actually write: reviews, review timelines and patch notes.",
   "license": "MIT",
   "type": "module",
   "bin": {
-    "steam-signal-mcp": "./dist/index.js"
+    "gameswarp-mcp": "./dist/index.js"
   },
   "files": [
     "dist"
