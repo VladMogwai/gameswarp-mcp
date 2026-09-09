@@ -15,6 +15,20 @@ export interface RawArticle {
   categories: string[];
 }
 
+/** Validators a source may send back to avoid re-downloading unchanged content. */
+export interface FetchContext {
+  etag: string | undefined;
+  lastModified: string | undefined;
+}
+
+export interface FetchResult {
+  articles: RawArticle[];
+  /** True when the source confirmed nothing changed and sent no content. */
+  notModified: boolean;
+  etag: string | undefined;
+  lastModified: string | undefined;
+}
+
 export interface NewsSource {
   /** Unique, stable, and recorded on every row so one source can be re-run. */
   id: string;
@@ -27,11 +41,11 @@ export interface NewsSource {
    * different mechanism with its own accuracy.
    */
   gameNamesInCategories: boolean;
-  fetch(): Promise<RawArticle[]>;
+  fetch(context: FetchContext): Promise<FetchResult>;
 }
 
 export interface SourceResult {
   sourceId: string;
-  articles: RawArticle[];
+  result: FetchResult | undefined;
   error: Error | undefined;
 }

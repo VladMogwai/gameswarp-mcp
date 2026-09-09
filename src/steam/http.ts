@@ -55,6 +55,48 @@ async function fetchOnce(url: string): Promise<string> {
   return response.text();
 }
 
+export interface ConditionalResult {
+  /** Undefined when the server answered 304 and sent no body. */
+  body: string | undefined;
+  notModified: boolean;
+  etag: string | undefined;
+  lastModified: string | undefined;
+}
+
+/**
+ * A polled feed is usually unchanged. Sending back the validators the server gave
+ * us last time turns most polls into a 304 with no body - cheaper for us and
+ * politer to the outlet. Never cached on disk: the point is to ask.
+ */
+export async function getConditional(
+  url: string,
+  validators: { etag?: string | undefined; lastModified?: string | undefined } = {},
+): Promise<ConditionalResult> {
+  const headers: Record<string, string> = { 'User-Agent': USER_AGENT };
+  if (validators.etag !== undefined) headers['If-None-Match'] = validators.etag;
+  if (validators.lastModified !== undefined) headers['If-Modified-Since'] = validators.lastModified;
+
+  await pace();
+  const response = await fetch(url, { headers, signal: AbortSignal.timeout(TIMEOUT_MS) });
+
+  if (response.status === 304) {
+    return {
+      body: undefined,
+      notModified: true,
+      etag: validators.etag,
+      lastModified: validators.lastModified,
+    };
+  }
+  if (!response.ok) throw new HttpError(response.status, url);
+
+  return {
+    body: await response.text(),
+    notModified: false,
+    etag: response.headers.get('etag') ?? undefined,
+    lastModified: response.headers.get('last-modified') ?? undefined,
+  };
+}
+
 /**
   * Steam does not publish its rate limits but starts refusing frequent requests,
   * hence the fixed gap between calls and the growing backoff on failure.

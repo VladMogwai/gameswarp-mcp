@@ -1,8 +1,8 @@
 import Parser from 'rss-parser';
-import { getText } from '../steam/http.js';
+import { getConditional } from '../steam/http.js';
 import { stripMarkup } from '../steam/markup.js';
 import type { LanguageCode } from '../config/languages.js';
-import type { NewsSource, RawArticle } from './types.js';
+import type { FetchContext, FetchResult, NewsSource, RawArticle } from './types.js';
 
 interface RssOptions {
   id: string;
@@ -42,11 +42,28 @@ export function rssSource(options: RssOptions): NewsSource {
     outlet: options.outlet,
     language: options.language,
     gameNamesInCategories: options.gameNamesInCategories,
-    async fetch(): Promise<RawArticle[]> {
-      // Feeds change hourly, so the disk cache is bypassed deliberately.
-      const xml = await getText(options.url, { cache: false });
-      const feed = await parser.parseString(xml);
-      return (feed.items as ParsedItem[]).map(toArticle).filter(isUsable);
+    async fetch(context: FetchContext): Promise<FetchResult> {
+      // Feeds change, so this never reads the disk cache; instead it asks the
+      // server whether anything is new and usually gets a 304 with no body.
+      const response = await getConditional(options.url, {
+        etag: context.etag,
+        lastModified: context.lastModified,
+      });
+      if (response.notModified || response.body === undefined) {
+        return {
+          articles: [],
+          notModified: true,
+          etag: response.etag,
+          lastModified: response.lastModified,
+        };
+      }
+      const feed = await parser.parseString(response.body);
+      return {
+        articles: (feed.items as ParsedItem[]).map(toArticle).filter(isUsable),
+        notModified: false,
+        etag: response.etag,
+        lastModified: response.lastModified,
+      };
     },
   };
 }

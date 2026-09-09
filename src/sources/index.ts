@@ -69,25 +69,13 @@ export const SOURCES: NewsSource[] = [
   }),
 ];
 
-export { type NewsSource, type RawArticle, type SourceResult } from './types.js';
+export {
+  type FetchContext,
+  type FetchResult,
+  type NewsSource,
+  type RawArticle,
+  type SourceResult,
+} from './types.js';
 export { rssSource } from './rss.js';
 
-/**
- * Fetches every source. One failing source must not lose the others, so errors
- * are returned per source rather than thrown.
- */
-export async function fetchAllSources(sources: NewsSource[] = SOURCES) {
-  return Promise.all(
-    sources.map(async (source) => {
-      try {
-        return { sourceId: source.id, articles: await source.fetch(), error: undefined };
-      } catch (error) {
-        return {
-          sourceId: source.id,
-          articles: [],
-          error: error instanceof Error ? error : new Error(String(error)),
-        };
-      }
-    }),
-  );
-}
+
