@@ -12,10 +12,48 @@ MCP-сервер, дающий модели исследовать репози�
 
 ## Прежде чем писать
 
-- Спецификация MCP: https://modelcontextprotocol.io/specification — раздел про
-  транспорт stdio, хендшейк `initialize`, методы `tools/list` и `tools/call`.
-- TypeScript SDK: https://github.com/modelcontextprotocol/typescript-sdk
-- Установлено и проверено: `@modelcontextprotocol/sdk` 1.30, `zod` 4.5 (совместимы).
+### Важно: версия спеки
+
+Опубликованная спека — **2026-07-28**. Установленный SDK 1.30.0 (последний на npm)
+реализует максимум **2025-11-25**. Читай ту версию, которую реализует твой SDK,
+иначе будешь искать в коде вещи, которых там нет.
+
+Порядок чтения (день 1, ~2 часа):
+
+1. **Транспорт stdio** — как вообще устроен обмен
+   https://modelcontextprotocol.io/specification/2025-11-25/basic/transports
+2. **Lifecycle** — хендшейк `initialize`, согласование версии и capabilities,
+   `notifications/initialized`, корректное завершение
+   https://modelcontextprotocol.io/specification/2025-11-25/basic/lifecycle
+3. **Server → Tools** — `tools/list`, `tools/call`, форма ответа, ошибки
+   https://modelcontextprotocol.io/specification/2025-11-25/server/tools
+4. **Туториал по серверу на TS** — после спеки, не до
+   https://modelcontextprotocol.io/docs/2026-07-28/develop/build-server
+5. **MCP Inspector** — как отлаживать
+   https://modelcontextprotocol.io/docs/2026-07-28/tools/inspector
+
+Источник истины — TypeScript-схема, а не проза:
+https://github.com/modelcontextprotocol/specification/blob/main/schema/2025-11-25/schema.ts
+
+### Потом — что изменилось в 2026-07-28
+
+Пролистай https://modelcontextprotocol.io/specification/2026-07-28/basic
+и сравни с тем, что прочитал. Главное:
+
+- Протокол стал **stateless**: соединение больше не сессия, версия и capabilities
+  клиента едут в `_meta` **каждого** запроса, а не только в `initialize`.
+- В ответах появился `resultType` (`complete` / `input_required`).
+- Расширения: Tasks (долгие операции), Apps, Skills over MCP.
+
+Это не для реализации сейчас — это для понимания, куда движется протокол.
+Разрыв «SDK на версию отстаёт от спеки» — хороший ответ на собеседовании,
+если спросят, следишь ли ты за экосистемой.
+
+### Установлено и проверено
+
+`@modelcontextprotocol/sdk` 1.30.0 + `zod` 4.5.4 — совместимы, импорты
+`McpServer` и `StdioServerTransport` резолвятся. Регистрация инструментов —
+`registerTool` (`server.tool()` помечен deprecated).
 
 Точка входа — `src/index.ts`. Пока её нет, `npm run typecheck` ругается
 «No inputs were found» — это ожидаемо, не баг скелета.
