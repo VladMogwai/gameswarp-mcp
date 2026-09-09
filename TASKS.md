@@ -180,3 +180,32 @@ out: где объявлен (файл, строка, сама строка об
 | `sindresorhus/got` | маленький, быстрый цикл отладки |
 
 Клонируй в `test/fixtures/` — она в `.gitignore`.
+
+---
+
+## Как подключить сервер к Claude Code
+
+После `npm run build` (появится `dist/index.js`):
+
+```
+claude mcp add praxis -- node /Users/vladarefiev/Desktop/work/praxis-mcp/dist/index.js
+```
+
+Путь обязательно абсолютный — Claude Code запускает процесс не из папки проекта.
+Проверить, что подключился: `claude mcp list`. Убрать: `claude mcp remove praxis`.
+
+Аргумент с корнем анализируемого репозитория добавишь туда же, когда решишь,
+как его передавать:
+
+```
+claude mcp add praxis -- node /path/to/dist/index.js /path/to/target/repo
+```
+
+Альтернатива для отладки без Claude Code — `npm run inspect`: собирает проект и
+открывает MCP Inspector, веб-интерфейс, где видно сырой JSON-RPC в обе стороны.
+Когда непонятно, почему инструмент не вызывается, смотреть надо туда.
+
+## Фикстура для тестов
+
+`test/fixtures/got` — репозиторий sindresorhus/got, склонирован (последние 50
+коммитов, есть на чём проверять диффы). Папка в `.gitignore`.
