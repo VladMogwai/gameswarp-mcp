@@ -87,9 +87,9 @@ function normalise(name: string): string {
 export async function resolveGameName(
   name: string,
   opts: { language?: LanguageCode } = {},
-): Promise<number | null> {
+): Promise<{ appid: number; name: string } | null> {
   const hits = await searchGames(name, { ...opts, limit: 5 });
   const wanted = normalise(name);
   const match = hits.find((hit) => normalise(hit.name) === wanted);
-  return match?.appid ?? null;
+  return match === undefined ? null : { appid: match.appid, name: match.name };
 }

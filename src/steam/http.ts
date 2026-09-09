@@ -3,7 +3,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 const CACHE_DIR = join(process.cwd(), '.cache');
-const USER_AGENT = 'gameswarp (https://github.com/vladarefiev/gameswarp)';
+const USER_AGENT = 'gameswarp (https://github.com/VladMogwai/gameswarp-mcp)';
 const MIN_INTERVAL_MS = 1500;
 const TIMEOUT_MS = 30_000;
 
