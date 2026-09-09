@@ -1,7 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('../src/steam/http.js', () => ({
-  getText: vi.fn(async () => FEED),
+  getConditional: vi.fn(async () => ({
+    body: FEED,
+    notModified: false,
+    etag: '"abc"',
+    lastModified: undefined,
+  })),
 }));
 
 const { rssSource } = await import('../src/sources/rss.js');
@@ -38,7 +43,15 @@ const source = rssSource({
   gameNamesInCategories: true,
 });
 
+const EMPTY_CONTEXT = { etag: undefined, lastModified: undefined };
+
 describe('rssSource', () => {
+  it('passes the server validators back out for the next poll', async () => {
+    const result = await source.fetch(EMPTY_CONTEXT);
+    expect(result.notModified).toBe(false);
+    expect(result.etag).toBe('"abc"');
+  });
+
   it('exposes the configuration it was built with', () => {
     expect(source.id).toBe('rss:example');
     expect(source.outlet).toBe('Example');
@@ -46,28 +59,28 @@ describe('rssSource', () => {
   });
 
   it('strips markup and entities out of titles and summaries', async () => {
-    const [first] = await source.fetch();
+    const [first] = (await source.fetch(EMPTY_CONTEXT)).articles;
     expect(first?.title).toBe("No Man's Sky gets a huge update");
     expect(first?.summary).toBe('The update lands today.');
   });
 
   it('keeps categories, deduplicated', async () => {
-    const [first] = await source.fetch();
+    const [first] = (await source.fetch(EMPTY_CONTEXT)).articles;
     expect(first?.categories).toEqual(["No Man's Sky", 'PC']);
   });
 
   it('parses the publication date', async () => {
-    const [first] = await source.fetch();
+    const [first] = (await source.fetch(EMPTY_CONTEXT)).articles;
     expect(first?.publishedAt.toISOString()).toBe('2024-10-07T10:00:00.000Z');
   });
 
   it('falls back to the link when a feed omits guid', async () => {
-    const articles = await source.fetch();
+    const { articles } = await source.fetch(EMPTY_CONTEXT);
     expect(articles[1]?.guid).toBe('https://example.com/b');
   });
 
   it('drops items that cannot be identified at all', async () => {
-    const articles = await source.fetch();
+    const { articles } = await source.fetch(EMPTY_CONTEXT);
     expect(articles).toHaveLength(2);
     expect(articles.map((a) => a.title)).not.toContain('An item with no link at all');
   });
