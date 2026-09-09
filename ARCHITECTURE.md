@@ -90,6 +90,43 @@ on submit. Localised: searching in Russian returns Russian titles.
 Both paths end the same way: a game is created as a stub row, and its reviews,
 timeline and patch notes are fetched only when someone asks about it.
 
+## Models
+
+Every call to a model goes through one interface, so which model answers is a
+configuration choice rather than a code change:
+
+```
+ModelProvider { id, local, complete(request) -> response }
+```
+
+`complete` takes an optional zod schema. Providers express that constraint
+differently - Ollama through `format`, OpenAI-compatible servers through
+`response_format` - and the adapter hides the difference, validating the answer
+before returning it. Small models wrap JSON in prose and fences no matter what
+the prompt says, so the parser recovers the object before giving up.
+
+Two adapters cover the ground:
+
+- `ollamaProvider` - a model on this machine. Nothing leaves the host.
+- `openAICompatibleProvider` - anything speaking the OpenAI chat shape, which
+  includes Groq, Together, OpenRouter and several free tiers.
+
+`local` is on the interface rather than implied, because sending game data to a
+hosted model is a decision worth making explicitly in a project whose premise is
+that the data stays put.
+
+Token counts come back on every response. That is what makes cost per analysis a
+measurement rather than a guess, and it is also what makes "how much worse is a
+local 8B at this task than a frontier model?" answerable with numbers.
+
+Selected by environment:
+
+```
+MODEL_PROVIDER=ollama            MODEL_NAME=gemma4:12b          (default)
+MODEL_PROVIDER=openai-compatible MODEL_NAME=llama-3.3-70b
+  MODEL_BASE_URL=https://api.groq.com/openai/v1  MODEL_API_KEY=...
+```
+
 ## Languages
 
 English and Russian are supported. Romanian is deferred: Steam holds only a few
