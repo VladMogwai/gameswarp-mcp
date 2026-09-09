@@ -1,8 +1,19 @@
 {
   "name": "gameswarp-mcp",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "MCP server for investigating Steam games through what players actually write: reviews, review timelines and patch notes.",
   "license": "MIT",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "steam",
+    "game-reviews",
+    "llm-tools"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vladarefiev/gameswarp.git"
+  },
   "type": "module",
   "bin": {
     "gameswarp-mcp": "./dist/index.js"
@@ -25,7 +36,8 @@
     "db:reset": "docker compose down -v && docker compose up -d && sleep 6 && npm run db:migrate",
     "lint:lang": "node scripts/check-no-cyrillic.mjs",
     "acceptance": "npm run build && node scripts/acceptance.mjs",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "prepublishOnly": "npm run lint:lang && npm run typecheck && npm test && npm run build"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
