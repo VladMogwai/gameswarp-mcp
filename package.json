@@ -1,11 +1,11 @@
 {
-  "name": "praxis-mcp",
+  "name": "steam-signal-mcp",
   "version": "0.0.0",
-  "description": "MCP server that lets a model investigate a repository: diffs, code search, and the team's own written conventions.",
+  "description": "MCP server for investigating Steam games through what players actually write: reviews, review timelines and patch notes.",
   "license": "MIT",
   "type": "module",
   "bin": {
-    "praxis-mcp": "./dist/index.js"
+    "steam-signal-mcp": "./dist/index.js"
   },
   "files": [
     "dist"
