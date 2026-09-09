@@ -16,8 +16,9 @@ create table games (
   updated_at     timestamptz not null default now()
 );
 
--- Отдельной таблицей, а не колонками: Steam отдаёт русское описание, а на
--- запрос румынского молча возвращает английское. Это надо различать.
+-- A separate table rather than per-language columns: Steam returns a real
+-- Russian description but silently falls back to English for languages it does
+-- not localise, and the two cases must stay distinguishable.
 create table game_locales (
   appid                 integer not null references games(appid) on delete cascade,
   language              text not null,
@@ -37,7 +38,7 @@ create table news (
   source        text not null check (source in ('developer', 'press')),
   outlet        text not null,
   url           text not null,
-  -- API язык не сообщает: определяем сами, до тех пор null
+  -- The API does not report the language; we detect it ourselves, null until then
   language      text,
   created_at    timestamptz not null default now()
 );
@@ -71,7 +72,7 @@ create index reviews_appid_date_idx on reviews (appid, posted_at desc);
 create index reviews_appid_sentiment_idx on reviews (appid, voted_up, posted_at desc);
 create index reviews_appid_lang_idx on reviews (appid, language);
 
--- Без внешнего ключа на games: обходчик узнаёт про appid раньше, чем заводит игру.
+-- No foreign key to games: the crawler learns about an appid before the game row exists.
 create table crawl_state (
   appid            integer not null,
   endpoint         text not null,

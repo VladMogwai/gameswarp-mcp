@@ -5,10 +5,11 @@ import { pool } from './pool.js';
 const MIGRATIONS_DIR = join(process.cwd(), 'migrations');
 
 /**
- * Миграции — простые .sql, применяются по алфавиту, каждая в своей транзакции.
- * Отката нет намеренно: на этой стадии проще снести базу и накатить заново,
- * чем поддерживать down-миграции, которыми никто не пользуется.
- */
+  * Migrations are plain .sql files applied in alphabetical order, each in its own
+  * transaction. There is deliberately no rollback: at this stage dropping the
+  * database and rebuilding it is cheaper than maintaining down-migrations that
+  * nobody runs.
+  */
 export async function migrate(): Promise<void> {
   await pool.query(`
     create table if not exists migrations (
@@ -31,10 +32,10 @@ export async function migrate(): Promise<void> {
       await client.query(sql);
       await client.query('insert into migrations (name) values ($1)', [file]);
       await client.query('commit');
-      console.error(`применена: ${file}`);
+      console.error(`applied: ${file}`);
     } catch (error) {
       await client.query('rollback');
-      throw new Error(`миграция ${file} упала: ${String(error)}`);
+      throw new Error(`migration ${file} failed: ${String(error)}`);
     } finally {
       client.release();
     }

@@ -27,10 +27,11 @@ function decodeEntities(text: string): string {
 }
 
 /**
- * В новостях Steam две разные разметки: анонсы разработчика приходят в BBCode
- * ([p], [url="..."]), пресса — в HTML (<strong>, <a>). Чистим обе одним проходом.
- * Блочные теги превращаем в перенос строки, чтобы текст не слипся в одну строку.
- */
+  * Steam news mixes two markup dialects: developer posts arrive as BBCode
+  * ([p], [url="..."]) while press articles arrive as HTML (<strong>, <a>).
+  * Both are stripped in one pass. Block-level tags become newlines so that
+  * paragraphs do not collapse into a single run of text.
+  */
 export function stripMarkup(raw: string): string {
   return decodeEntities(
     raw

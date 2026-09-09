@@ -22,7 +22,8 @@
     "format": "prettier --write .",
     "inspect": "npm run build && npx @modelcontextprotocol/inspector node dist/index.js",
     "db:migrate": "npm run build && node dist/db/migrate.js",
-    "db:reset": "docker compose down -v && docker compose up -d && sleep 6 && npm run db:migrate"
+    "db:reset": "docker compose down -v && docker compose up -d && sleep 6 && npm run db:migrate",
+    "lint:lang": "node scripts/check-no-cyrillic.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",

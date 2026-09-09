@@ -56,10 +56,10 @@ async function fetchOnce(url: string): Promise<string> {
 }
 
 /**
- * Steam не публикует свои лимиты, но отказывает при частых запросах.
- * Отсюда пауза между запросами и растущий отступ при отказе.
- * 4xx не повторяем: 403 означает, что appid не существует, и повтор не поможет.
- */
+  * Steam does not publish its rate limits but starts refusing frequent requests,
+  * hence the fixed gap between calls and the growing backoff on failure.
+  * 4xx is never retried: 403 means the appid does not exist, so retrying is waste.
+  */
 export async function getText(url: string, retries = 3): Promise<string> {
   const cached = await readCache(url);
   if (cached !== undefined) return cached;
