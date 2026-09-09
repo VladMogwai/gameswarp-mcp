@@ -73,6 +73,23 @@ The agent (5) and the MCP server (6) call **the same layer 4 functions**. Query
 logic is never duplicated and MCP stays thin - which is why it is not part of the
 pipeline.
 
+## Entry points
+
+Two ways in, both landing on the same game page:
+
+**The feed.** Press articles pulled from outlet RSS. Eurogamer, Rock Paper Shotgun
+and VG247 name the game among an article's categories, mixed in with platform,
+genre and studio tags; the strict resolver separates them. PC Gamer and
+GamingOnLinux tag only genres, so those need the game extracted from the headline -
+the first place in the project where a model is actually required.
+
+**Search by name.** Steam's own store search, so no local catalogue is needed. It
+matches prefixes but not typos, so the UI searches as the user types rather than
+on submit. Localised: searching in Russian returns Russian titles.
+
+Both paths end the same way: a game is created as a stub row, and its reviews,
+timeline and patch notes are fetched only when someone asks about it.
+
 ## Languages
 
 English and Russian are supported. Romanian is deferred: Steam holds only a few
