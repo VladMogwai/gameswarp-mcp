@@ -20,15 +20,19 @@
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "format": "prettier --write .",
-    "inspect": "npm run build && npx @modelcontextprotocol/inspector node dist/index.js"
+    "inspect": "npm run build && npx @modelcontextprotocol/inspector node dist/index.js",
+    "db:migrate": "npm run build && node dist/db/migrate.js",
+    "db:reset": "docker compose down -v && docker compose up -d && sleep 6 && npm run db:migrate"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
+    "pg": "^8.23.0",
     "zod": "^4.5.4"
   },
   "devDependencies": {
     "@modelcontextprotocol/inspector": "^2.5.0",
     "@types/node": "^26.5.0",
+    "@types/pg": "^8.23.1",
     "prettier": "^3.9.6",
     "typescript": "^7.0.2",
     "vitest": "^5.0.0"
