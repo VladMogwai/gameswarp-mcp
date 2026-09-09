@@ -38,6 +38,24 @@ selecting reviews** - `playtime_last_two_weeks`, `last_played`, `personaname`,
 helpfulness score and pagination behaves differently, so use `recent` for a full
 crawl.
 
+**There is no way to fetch reviews from an arbitrary past window.** This is the
+sharpest constraint in the whole API and it shapes the product.
+
+`day_range` looks like the answer and is not: values of 365, 1000, 1500 and 3000
+all return the same recent slice, so anything beyond roughly a year is silently
+ignored. The only route into the past is walking `recent` backwards, 100 reviews
+per request.
+
+Measured for No Man's Sky: reaching October 2022 means passing 132,860 newer
+reviews, which is 1,328 requests and about **33 minutes** at a polite pace. A
+naive attempt walked 100 pages in 153 seconds and returned zero rows, having
+never arrived.
+
+Consequences:
+- Recent windows are cheap. The last 30 days is two or three requests.
+- Deep history is a background job for one game, not something a user waits for.
+- Analyses of old rating drops have to be precomputed for a chosen few games.
+
 Review counts by language, sampled 2026-09-09:
 
 | Game | English | Russian | Romanian |
