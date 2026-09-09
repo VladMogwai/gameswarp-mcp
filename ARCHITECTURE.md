@@ -1,86 +1,90 @@
-# Архитектура Gameswarp
+# Architecture
 
-Согласовано 2026-09-09.
+Agreed 2026-09-09.
 
 ```
                         Steam API
-                            │
-   ┌────────────────────────▼─────────────────────────┐
-   │ 1. Клиент Steam + добытчики                      │
-   │    http.ts, news.ts, reviews.ts, histogram.ts…   │
-   └────────────────────────┬─────────────────────────┘
-                            │
-   ┌────────────────────────▼─────────────────────────┐
-   │ 2. Обходчик                                      │
-   │    расписание, очередь, возобновление            │
-   └────────────────────────┬─────────────────────────┘
-                            │
-   ┌────────────────────────▼─────────────────────────┐
-   │ 3. Хранилище (Postgres)                          │
-   │    игры, новости, отзывы, гистограммы, разборы   │
-   └────────────────────────┬─────────────────────────┘
-                            │
-   ┌────────────────────────▼─────────────────────────┐
-   │ 4. Запросы к данным                              │
-   │    найти просадки, поиск, похожие игры           │
-   └───┬──────────────┬───────────────────┬───────────┘
-       │              │                   │
-  ┌────▼─────┐  ┌─────▼──────┐     ┌──────▼──────┐
-  │ 5. Агент │  │ 6. MCP     │     │ 7. HTTP API │
-  │  разбор  │  │  для модели│     │  для браузера│
-  │  рекоменд│  └────────────┘     └──────┬──────┘
-  └────┬─────┘                            │
-       │                            ┌─────▼─────┐
-       │                            │ 8. Клиент │
-       │                            └───────────┘
-  ┌────▼──────────┐
-  │ 9. Evals      │
-  └───────────────┘
+                            |
+   +------------------------v-------------------------+
+   | 1. Steam client + fetchers                       |
+   |    http.ts, news.ts, reviews.ts, histogram.ts    |
+   +------------------------+-------------------------+
+                            |
+   +------------------------v-------------------------+
+   | 2. Crawler                                       |
+   |    scheduling, queueing, resumption              |
+   +------------------------+-------------------------+
+                            |
+   +------------------------v-------------------------+
+   | 3. Storage (Postgres)                            |
+   |    games, news, reviews, timelines, analyses     |
+   +------------------------+-------------------------+
+                            |
+   +------------------------v-------------------------+
+   | 4. Queries                                       |
+   |    find rating drops, search, similar games      |
+   +---+--------------+--------------------+----------+
+       |              |                    |
+  +----v-----+  +-----v------+     +-------v-----+
+  | 5. Agent |  | 6. MCP     |     | 7. HTTP API |
+  | analysis |  | for models |     | for browsers|
+  | & recs   |  +------------+     +-------+-----+
+  +----+-----+                             |
+       |                             +-----v-----+
+       |                             | 8. Client |
+       |                             +-----------+
+  +----v----------+
+  | 9. Evals      |
+  +---------------+
 ```
 
-## Модули
+## Modules
 
-**1. Клиент Steam и добытчики.** Один HTTP-клиент с паузами, повторами и кэшем;
-поверх него тонкие функции на каждый эндпоинт. Не знают ни про БД, ни про модель.
-Сделано: `http.ts`, `markup.ts`, `news.ts`.
+**1. Steam client and fetchers.** One HTTP client with pacing, retries and a disk
+cache; thin per-endpoint functions on top. They know nothing about the database
+or about models. Done: `http.ts`, `markup.ts`, `news.ts`.
 
-**2. Обходчик.** Ходит по тысячам appid, складывает в базу. Расписание, очередь,
-возобновление после обрыва, пометка мёртвых appid (Steam отдаёт на них 403).
-Самый бэкендовый модуль проекта.
+**2. Crawler.** Walks thousands of appids and writes to the database. Scheduling,
+queueing, resumption after an interrupt, marking dead appids (Steam answers 403
+for those). The most backend-heavy module in the project.
 
-**3. Хранилище.** Postgres. Корпус на пять тысяч игр — порядка 850 МБ только
-новостей, файлами не обойтись.
+**3. Storage.** Postgres. News alone for five thousand games is on the order of
+850 MB, so files are not an option.
 
-**4. Запросы к данным.** Найти просадки рейтинга, найти патч рядом с датой,
-поиск по смыслу, похожие игры. Единственный слой, который знает SQL.
+**4. Queries.** Find rating drops, find the patch nearest a date, search by
+meaning, find similar games. The only layer that knows SQL.
 
-**5. Агент.** Разбор игры и рекомендации. Ходит в слой 4 **напрямую**: внутри
-своего процесса лишний прыжок через протокол не нужен.
+**5. Agent.** Game analysis and recommendations. Calls layer 4 **directly**:
+inside one process a hop through a protocol buys nothing.
 
-**6. MCP-сервер.** Не этап конвейера, а **вторая дверь к тем же данным**: браузер
-ходит в HTTP API, модель — сюда. Сам ничего не анализирует, отдаёт инструменты
-и уходит с дороги. Тонкая обёртка над слоем 4.
+**6. MCP server.** Not a stage in the pipeline but a **second door to the same
+data**: browsers go through the HTTP API, models come here. It analyses nothing
+itself - it hands a model the tools and gets out of the way. A thin wrapper over
+layer 4.
 
-**7-8. HTTP API и клиент.** Лента новостей, страница разбора, поиск, сравнение.
+**7-8. HTTP API and client.** News feed, analysis page, search, comparison.
 
-**9. Evals.** Гоняет агента по датасетам с объективной правдой, считает метрики.
+**9. Evals.** Runs the agent over datasets with objective ground truth and scores
+the results.
 
-## Ключевое решение
+## Key decision
 
-Агент (5) и MCP-сервер (6) зовут **одни и те же функции слоя 4**. Логика запросов
-не дублируется, MCP остаётся тонким — поэтому он и не в конвейере.
+The agent (5) and the MCP server (6) call **the same layer 4 functions**. Query
+logic is never duplicated and MCP stays thin - which is why it is not part of the
+pipeline.
 
-## Языки
+## Languages
 
-Поддерживаются английский и русский. Румынский отложен: отзывов на нём единицы
-сотен на игру против сотен тысяч английских, а описания Steam на румынский не
-переводит — молча отдаёт английские.
+English and Russian are supported. Romanian is deferred: Steam holds only a few
+hundred Romanian reviews per game against hundreds of thousands of English ones,
+and it does not localise store descriptions to Romanian - it silently returns
+English.
 
-Мультиязычность при этом заложена в схему: язык является ключом
-(`game_locales(appid, language)`, `reviews.language`, `news.language`), а не
-колонкой на каждый язык. Добавление языка — строка в `src/config/languages.ts`
-и данные, миграция не нужна.
+Multilingual support is nonetheless built into the schema: language is a key
+(`game_locales(appid, language)`, `reviews.language`, `news.language`) rather than
+a per-language column. Adding a language means one line in
+`src/config/languages.ts` plus data - no migration.
 
-`game_locales.is_fallback` помечает случай, когда Steam на запрос локали вернул
-английский текст. Это надо различать, иначе английское описание будет выглядеть
-как переведённое.
+`game_locales.is_fallback` marks the case where Steam answered a locale request
+with English text. The distinction matters: otherwise an English description
+sitting in a localised row looks like a translation that was never made.

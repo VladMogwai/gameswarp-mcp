@@ -2,6 +2,7 @@ import { readdir, readFile } from 'node:fs/promises';
 import { extname, join } from 'node:path';
 
 const ROOTS = ['src', 'migrations', 'test', 'scripts'];
+const FILES = ['README.md', 'ARCHITECTURE.md', 'API-NOTES.md'];
 const EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.mjs', '.sql', '.json', '.yml', '.yaml']);
 const SKIP_DIRS = new Set(['fixtures', 'node_modules', 'dist']);
 const CYRILLIC = /[\u0400-\u04FF\u0500-\u052F]/;
@@ -23,12 +24,17 @@ async function* walk(dir) {
 }
 
 const offenders = [];
+async function check(file) {
+  const lines = (await readFile(file, 'utf8')).split('\n');
+  lines.forEach((line, index) => {
+    if (CYRILLIC.test(line)) offenders.push(`${file}:${index + 1}: ${line.trim().slice(0, 90)}`);
+  });
+}
+
+for (const file of FILES) await check(file);
 for (const root of ROOTS) {
   for await (const file of walk(root)) {
-    const lines = (await readFile(file, 'utf8')).split('\n');
-    lines.forEach((line, index) => {
-      if (CYRILLIC.test(line)) offenders.push(`${file}:${index + 1}: ${line.trim().slice(0, 90)}`);
-    });
+    await check(file);
   }
 }
 

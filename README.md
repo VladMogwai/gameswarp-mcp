@@ -25,8 +25,8 @@ npm test
 npm run inspect    # build + MCP Inspector
 ```
 
-See [TASKS.md](./TASKS.md) for the working spec and
-[API-NOTES.md](./API-NOTES.md) for verified Steam endpoints.
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for how the modules fit together and
+[API-NOTES.md](./API-NOTES.md) for hand-verified Steam endpoints.
 
 ## License
 

@@ -5,3 +5,7 @@ dist/
 .env
 test/fixtures/
 .cache/
+
+# Personal working notes, kept in Russian, not part of the repo
+TASKS.md
+SPEC-NOTES.md
