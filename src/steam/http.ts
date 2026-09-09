@@ -60,9 +60,24 @@ async function fetchOnce(url: string): Promise<string> {
   * hence the fixed gap between calls and the growing backoff on failure.
   * 4xx is never retried: 403 means the appid does not exist, so retrying is waste.
   */
-export async function getText(url: string, retries = 3): Promise<string> {
-  const cached = await readCache(url);
-  if (cached !== undefined) return cached;
+export interface FetchOptions {
+  retries?: number;
+  /**
+   * Steam history never changes, so responses are cached forever by default.
+   * News feeds do change, and a source that re-reads one must opt out or it
+   * would be stuck on whatever it saw first.
+   */
+  cache?: boolean;
+}
+
+export async function getText(url: string, opts: FetchOptions = {}): Promise<string> {
+  const retries = opts.retries ?? 3;
+  const useCache = opts.cache ?? true;
+
+  if (useCache) {
+    const cached = await readCache(url);
+    if (cached !== undefined) return cached;
+  }
 
   let lastError: unknown;
   for (let attempt = 0; attempt <= retries; attempt++) {
@@ -70,7 +85,7 @@ export async function getText(url: string, retries = 3): Promise<string> {
     await pace();
     try {
       const body = await fetchOnce(url);
-      await writeCache(url, body);
+      if (useCache) await writeCache(url, body);
       return body;
     } catch (error) {
       if (error instanceof HttpError && error.status < 500) throw error;
@@ -80,6 +95,6 @@ export async function getText(url: string, retries = 3): Promise<string> {
   throw lastError;
 }
 
-export async function getJson<T>(url: string, retries = 3): Promise<T> {
-  return JSON.parse(await getText(url, retries)) as T;
+export async function getJson<T>(url: string, opts: FetchOptions = {}): Promise<T> {
+  return JSON.parse(await getText(url, opts)) as T;
 }

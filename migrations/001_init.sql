@@ -40,6 +40,9 @@ create table game_locales (
 create table articles (
   id            bigserial primary key,
   guid          text not null unique,
+  -- Which adapter produced this row, so one source can be re-run or audited.
+  -- Distinct from `outlet`: an aggregator can serve another outlet's article.
+  source_id     text not null,
   outlet        text not null,
   url           text not null,
   title         text not null,
@@ -53,6 +56,7 @@ create table articles (
 );
 create index articles_published_idx on articles (published_at desc);
 create index articles_outlet_idx on articles (outlet, published_at desc);
+create index articles_source_idx on articles (source_id, published_at desc);
 
 -- One article may be about several games, and many are about none.
 -- `method` records how the link was established so it can be audited later.
