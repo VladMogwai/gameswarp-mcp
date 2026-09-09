@@ -7,8 +7,10 @@ be developed offline.
 ## The trap
 
 `https://api.steampowered.com/ISteamApps/GetAppList/v2/` is **dead**. It returns
-404, `Method 'GetAppList' not found`. Every tutorial still points at it. Use
-SteamSpy for the catalogue instead.
+404, `Method 'GetAppList' not found`. Every tutorial still points at it.
+
+We do not need a catalogue anyway: games are discovered through press articles and
+resolved by name, see **Store search** below.
 
 ## Endpoints
 
@@ -106,13 +108,24 @@ first entry is the game itself and should be dropped.
 **Do not expose this list to the agent.** It is the correct answer in the
 "find similar games" eval task, and the agent would simply copy it.
 
-### SteamSpy - catalogue, tags, scores
+### Store search - name to appid
 ```
-https://steamspy.com/api.php?request=all&page=<N>       # 1000 games per page, by owners
-https://steamspy.com/api.php?request=appdetails&appid=<appid>
+https://store.steampowered.com/api/storesearch/?term=<name>&cc=us&l=english
 ```
-Provides `positive`/`negative` (for deriving the rating band), `owners` (a range),
-`tags` with weights, and `price`.
+Resolves a game name to an appid without needing a catalogue. Tolerant of missing
+apostrophes and casing (`no mans sky` finds No Man's Sky, `Baldurs Gate 3` finds
+Baldur's Gate 3) and returns zero results for nonsense, which makes it usable as a
+"is this string a game?" test.
+
+### Rating counts and band
+```
+https://store.steampowered.com/appreviews/<appid>?json=1&num_per_page=0&language=all&purchase_type=all
+```
+`query_summary` carries `total_positive`, `total_negative`, `total_reviews`,
+`review_score` and `review_score_desc` (`Very Positive`, `Mixed`, ...).
+
+This is Steam's own count, and `review_score_desc` is the ground truth for the
+rating-prediction eval task.
 
 ### Current player count
 ```
