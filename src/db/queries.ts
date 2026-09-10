@@ -1,4 +1,4 @@
-import { pool } from './pool.js';
+import { query as run } from './pool.js';
 
 export interface ArticleHit {
   id: number;
@@ -32,7 +32,7 @@ export async function searchArticles(
   const limit = Math.min(opts.limit ?? 20, 100);
   const sinceDays = opts.sinceDays ?? 3650;
 
-  const result = await pool.query<ArticleRow>(
+  const result = await run<ArticleRow>(
     `select id::text, outlet, title, summary, url, published_at,
             coalesce(array(select jsonb_array_elements_text(categories)), '{}') as categories
      from articles
@@ -59,4 +59,155 @@ export async function searchArticles(
     publishedAt: row.published_at,
     categories: row.categories,
   }));
+}
+
+export interface FeedItem {
+  id: number;
+  outlet: string;
+  title: string;
+  summary: string | undefined;
+  url: string;
+  publishedAt: Date;
+  games: { appid: number; name: string; capsuleImage?: string | null }[];
+}
+
+/** The front page: what was published lately, with any games we could identify. */
+export async function recentArticles(limit = 40): Promise<FeedItem[]> {
+  const result = await run<{
+    id: string;
+    outlet: string;
+    title: string;
+    summary: string | null;
+    url: string;
+    published_at: Date;
+    games: { appid: number; name: string; capsuleImage?: string | null }[] | null;
+  }>(
+    `select a.id::text, a.outlet, a.title, a.summary, a.url, a.published_at,
+            coalesce(
+              (select json_agg(json_build_object(
+                 'appid', g.appid, 'name', g.name, 'capsuleImage', g.capsule_image))
+               from article_games ag join games g on g.appid = ag.appid
+               where ag.article_id = a.id),
+              '[]'
+            ) as games
+     from articles a
+     order by a.published_at desc
+     limit $1`,
+    [limit],
+  );
+  return result.rows.map((row) => ({
+    id: Number(row.id),
+    outlet: row.outlet,
+    title: row.title,
+    summary: row.summary ?? undefined,
+    url: row.url,
+    publishedAt: row.published_at,
+    games: row.games ?? [],
+  }));
+}
+
+export interface DiscussedGame {
+  appid: number;
+  name: string;
+  capsuleImage: string | null;
+  outlets: number;
+  articles: number;
+  lastMention: Date;
+}
+
+/**
+ * Which games the press wrote about, ranked by how many outlets covered them.
+ * Outlet count first, because five publications on one subject is a story and
+ * five pieces from one publication is a beat.
+ */
+export async function gamesDiscussed(days = 7, limit = 20): Promise<DiscussedGame[]> {
+  const result = await run<{
+    appid: number;
+    name: string;
+    capsule_image: string | null;
+    outlets: string;
+    articles: string;
+    last_mention: Date;
+  }>(
+    `select g.appid, g.name, g.capsule_image,
+            count(distinct a.outlet)::text as outlets,
+            count(*)::text as articles,
+            max(a.published_at) as last_mention
+     from article_games ag
+     join games g on g.appid = ag.appid
+     join articles a on a.id = ag.article_id
+     where a.published_at > now() - ($1 || ' days')::interval
+     group by g.appid, g.name, g.capsule_image
+     order by count(distinct a.outlet) desc, count(*) desc, max(a.published_at) desc
+     limit $2`,
+    [String(days), limit],
+  );
+  return result.rows.map((row) => ({
+    appid: row.appid,
+    name: row.name,
+    capsuleImage: row.capsule_image,
+    outlets: Number(row.outlets),
+    articles: Number(row.articles),
+    lastMention: row.last_mention,
+  }));
+}
+
+export interface GamePage {
+  appid: number;
+  name: string;
+  headerImage: string | null;
+  months: { month: string; up: number; down: number; positiveShare: number }[];
+  articles: FeedItem[];
+}
+
+export async function gamePage(appid: number): Promise<GamePage | undefined> {
+  const game = await run<{ appid: number; name: string; header_image: string | null }>(
+    'select appid, name, header_image from games where appid = $1',
+    [appid],
+  );
+  const found = game.rows[0];
+  if (found === undefined) return undefined;
+
+  const timeline = await run<{ month: string; up: number; down: number }>(
+    'select month, up, down from review_timeline_cache where appid = $1 order by month',
+    [appid],
+  );
+
+  const articles = await run<{
+    id: string;
+    outlet: string;
+    title: string;
+    summary: string | null;
+    url: string;
+    published_at: Date;
+  }>(
+    `select a.id::text, a.outlet, a.title, a.summary, a.url, a.published_at
+     from article_games ag join articles a on a.id = ag.article_id
+     where ag.appid = $1 order by a.published_at desc limit 20`,
+    [appid],
+  );
+
+  return {
+    appid: found.appid,
+    name: found.name,
+    headerImage: found.header_image,
+    months: timeline.rows.map((row) => {
+      const total = row.up + row.down;
+      return {
+        month: row.month,
+        up: row.up,
+        down: row.down,
+        positiveShare: total === 0 ? 0 : row.up / total,
+      };
+    }),
+    articles: articles.rows.map((row) => ({
+      id: Number(row.id),
+      outlet: row.outlet,
+      title: row.title,
+      summary: row.summary ?? undefined,
+      url: row.url,
+      publishedAt: row.published_at,
+      games: [],
+    })),
+  };
 }

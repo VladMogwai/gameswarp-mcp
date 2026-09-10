@@ -1,0 +1,112 @@
+[
+  {
+    "appid": 275850,
+    "game": "No Man's Sky",
+    "month": "2022-10",
+    "shareBefore": 92.3,
+    "shareAfter": 71.8,
+    "reviewsInMonth": 2707,
+    "patchDate": "2022-10-07",
+    "patchTitle": "Introducing...the Waypoint (4.0) Update"
+  },
+  {
+    "appid": 1091500,
+    "game": "Cyberpunk 2077",
+    "month": "2021-12",
+    "shareBefore": 83.7,
+    "shareAfter": 73.7,
+    "reviewsInMonth": 11237,
+    "patchDate": "2021-12-10",
+    "patchTitle": "1 year with Cyberpunk 2077"
+  },
+  {
+    "appid": 730,
+    "game": "Counter-Strike 2",
+    "month": "2018-12",
+    "shareBefore": 88.4,
+    "shareAfter": 58.7,
+    "reviewsInMonth": 84928,
+    "patchDate": "2018-12-07",
+    "patchTitle": "Welcome to the Danger Zone"
+  },
+  {
+    "appid": 271590,
+    "game": "Grand Theft Auto V",
+    "month": "2018-12",
+    "shareBefore": 92.7,
+    "shareAfter": 80.1,
+    "reviewsInMonth": 6325,
+    "patchDate": "2018-12-13",
+    "patchTitle": "GTA Online: Arena War Out Now"
+  },
+  {
+    "appid": 271590,
+    "game": "Grand Theft Auto V",
+    "month": "2019-08",
+    "shareBefore": 89.7,
+    "shareAfter": 69.4,
+    "reviewsInMonth": 6447,
+    "patchDate": "2019-07-23",
+    "patchTitle": "Grand Opening: The Diamond Casino & Resort is Now Open"
+  },
+  {
+    "appid": 252490,
+    "game": "Rust",
+    "month": "2019-08",
+    "shareBefore": 88,
+    "shareAfter": 78.5,
+    "reviewsInMonth": 2096,
+    "patchDate": "2019-08-01",
+    "patchTitle": "Excavator Update"
+  },
+  {
+    "appid": 1174180,
+    "game": "Red Dead Redemption 2",
+    "month": "2025-06",
+    "shareBefore": 93.7,
+    "shareAfter": 74.4,
+    "reviewsInMonth": 15048,
+    "patchDate": "2025-06-04",
+    "patchTitle": "Evade Enemy Fire in the New Dodge a Bullet Twist on Head for the Hills"
+  },
+  {
+    "appid": 381210,
+    "game": "Dead by Daylight",
+    "month": "2019-03",
+    "shareBefore": 76.1,
+    "shareAfter": 59,
+    "reviewsInMonth": 2515,
+    "patchDate": "2019-03-19",
+    "patchTitle": "The Demise of the Faithful chapter is now available!"
+  },
+  {
+    "appid": 1063730,
+    "game": "New World",
+    "month": "2026-01",
+    "shareBefore": 28.7,
+    "shareAfter": 19.2,
+    "reviewsInMonth": 526,
+    "patchDate": "2026-01-15",
+    "patchTitle": "The Future of New World: What to Expect"
+  },
+  {
+    "appid": 648800,
+    "game": "Raft",
+    "month": "2018-12",
+    "shareBefore": 91.7,
+    "shareAfter": 79.8,
+    "reviewsInMonth": 516,
+    "patchDate": "2018-12-07",
+    "patchTitle": "Development Blog #37"
+  },
+  {
+    "appid": 648800,
+    "game": "Raft",
+    "month": "2019-08",
+    "shareBefore": 91,
+    "shareAfter": 81.5,
+    "reviewsInMonth": 401,
+    "patchDate": "2019-08-16",
+    "patchTitle": "DevBlog #38"
+  }
+]

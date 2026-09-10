@@ -57,5 +57,12 @@
   "homepage": "https://github.com/VladMogwai/gameswarp-mcp#readme",
   "bugs": {
     "url": "https://github.com/VladMogwai/gameswarp-mcp/issues"
+  },
+  "exports": {
+    ".": "./dist/index.js",
+    "./db": "./dist/db/queries.js",
+    "./db/pool": "./dist/db/pool.js",
+    "./db/analyses": "./dist/db/analyses.js",
+    "./images": "./dist/steam/images.js"
   }
 }

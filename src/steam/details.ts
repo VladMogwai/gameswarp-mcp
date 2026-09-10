@@ -15,6 +15,8 @@ export interface GameDetails {
   isFree: boolean;
   shortDescription: string;
   detailedDescription: string;
+  headerImage: string | undefined;
+  capsuleImage: string | undefined;
   /** True when Steam answered a non-English locale with the English text. */
   isFallback: boolean;
 }
@@ -30,6 +32,8 @@ interface RawDetails {
   is_free?: boolean;
   short_description?: string;
   detailed_description?: string;
+  header_image?: string;
+  capsule_image?: string;
 }
 
 type DetailsResponse = Record<string, { success: boolean; data?: RawDetails }>;
@@ -86,6 +90,8 @@ export async function fetchGameDetails(
     isFree: raw.is_free ?? false,
     shortDescription: stripMarkup(raw.short_description ?? ''),
     detailedDescription: stripMarkup(raw.detailed_description ?? ''),
+    headerImage: raw.header_image,
+    capsuleImage: raw.capsule_image,
     isFallback,
   };
 }

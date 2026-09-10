@@ -1,4 +1,4 @@
-import { pool } from './pool.js';
+import { query } from './pool.js';
 
 export interface SourceState {
   sourceId: string;
@@ -19,7 +19,7 @@ interface StateRow {
 }
 
 export async function loadSourceState(sourceId: string): Promise<SourceState | undefined> {
-  const result = await pool.query<StateRow>(
+  const result = await query<StateRow>(
     'select * from source_state where source_id = $1',
     [sourceId],
   );
@@ -44,7 +44,7 @@ export async function recordSuccess(
     status: string;
   },
 ): Promise<void> {
-  await pool.query(
+  await query(
     `insert into source_state
        (source_id, etag, last_modified, last_attempt_at, last_success_at, last_status,
         last_error, newest_item_at, consecutive_failures)
@@ -65,7 +65,7 @@ export async function recordSuccess(
 }
 
 export async function recordFailure(sourceId: string, error: string): Promise<void> {
-  await pool.query(
+  await query(
     `insert into source_state
        (source_id, last_attempt_at, last_status, last_error, consecutive_failures)
      values ($1, now(), 'error', $2, 1)

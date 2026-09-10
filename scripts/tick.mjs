@@ -3,7 +3,7 @@
 import { migrate } from '../dist/db/migrate.js';
 import { ingestAll } from '../dist/sources/ingest.js';
 import { resolveCategories } from '../dist/resolve/categories.js';
-import { pool } from '../dist/db/pool.js';
+import { closePool } from '../dist/db/pool.js';
 
 const started = Date.now();
 let failures = 0;
@@ -40,7 +40,7 @@ try {
   console.error('tick failed:', error);
   failures++;
 } finally {
-  await pool.end();
+  await closePool();
 }
 
 // A single unreachable outlet must not fail the run; losing every source must.

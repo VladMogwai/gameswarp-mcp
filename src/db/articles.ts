@@ -1,4 +1,4 @@
-import { pool } from './pool.js';
+import { query } from './pool.js';
 import type { LanguageCode } from '../config/languages.js';
 import type { RawArticle } from '../sources/types.js';
 
@@ -35,7 +35,7 @@ export async function saveArticles(
   });
   for (const article of articles) values.push(JSON.stringify(article.categories));
 
-  const result = await pool.query(
+  const result = await query(
     `insert into articles
        (guid, source_id, outlet, url, title, summary, published_at, language, categories)
      values ${rows.join(', ')}
@@ -46,6 +46,6 @@ export async function saveArticles(
 }
 
 export async function countArticles(): Promise<number> {
-  const result = await pool.query<{ count: string }>('select count(*)::text from articles');
+  const result = await query<{ count: string }>('select count(*)::text from articles');
   return Number(result.rows[0]?.count ?? 0);
 }

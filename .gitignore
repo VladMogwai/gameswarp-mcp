@@ -9,3 +9,10 @@ test/fixtures/
 # Personal working notes, kept in Russian, not part of the repo
 TASKS.md
 SPEC-NOTES.md
+evals/results/
+.next/
+web/.next/
+web/next-env.d.ts
+.next/
+web/.next/
+web/next-env.d.ts
