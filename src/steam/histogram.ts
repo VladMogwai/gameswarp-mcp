@@ -1,7 +1,9 @@
 import { getJson } from './http.js';
 
+export type Granularity = 'week' | 'month';
+
 export interface TimelinePoint {
-  /** First day of the month for rollups, the day itself for recent points. */
+  /** First day of the bucket: a month or a week, depending on granularity. */
   date: Date;
   up: number;
   down: number;
@@ -9,8 +11,13 @@ export interface TimelinePoint {
 }
 
 export interface ReviewTimeline {
-  /** Monthly, covering the whole life of the game. */
-  months: TimelinePoint[];
+  /**
+   * The whole life of the game, in buckets Steam chose. Games with years of
+   * history come back monthly; anything newer comes back weekly, and treating
+   * the two the same collapses weeks into a month that never existed.
+   */
+  buckets: TimelinePoint[];
+  granularity: Granularity;
   /** Daily, the last 30 days. */
   recentDays: TimelinePoint[];
 }
@@ -25,16 +32,19 @@ interface HistogramResponse {
   results?: {
     rollups?: RawPoint[];
     recent?: RawPoint[];
+    rollup_type?: string;
   };
 }
 
-/** The source for locating rating drops: monthly ups and downs since launch. */
+/** The source for locating rating drops: ups and downs bucketed since launch. */
 export async function fetchReviewTimeline(appid: number): Promise<ReviewTimeline> {
   const response = await getJson<HistogramResponse>(
     `https://store.steampowered.com/appreviewhistogram/${appid}?l=english`,
   );
+  const declared = response.results?.rollup_type;
   return {
-    months: (response.results?.rollups ?? []).map(toPoint),
+    buckets: (response.results?.rollups ?? []).map(toPoint),
+    granularity: declared === 'week' ? 'week' : 'month',
     recentDays: (response.results?.recent ?? []).map(toPoint),
   };
 }

@@ -156,45 +156,53 @@ export interface GamePage {
   appid: number;
   name: string;
   headerImage: string | null;
-  months: { month: string; up: number; down: number; positiveShare: number }[];
+  buckets: { bucket: string; up: number; down: number; positiveShare: number }[];
+  granularity: 'week' | 'month';
   articles: FeedItem[];
 }
 
+/**
+ * Issued together rather than one after another. The database is a round trip
+ * away - well over a hundred milliseconds of it - so three sequential queries
+ * cost three times the latency for no reason.
+ */
 export async function gamePage(appid: number): Promise<GamePage | undefined> {
-  const game = await run<{ appid: number; name: string; header_image: string | null }>(
-    'select appid, name, header_image from games where appid = $1',
-    [appid],
-  );
+  const [game, timeline, articles] = await Promise.all([
+    run<{ appid: number; name: string; header_image: string | null }>(
+      'select appid, name, header_image from games where appid = $1',
+      [appid],
+    ),
+    run<{ bucket: string; up: number; down: number; granularity: 'week' | 'month' }>(
+      'select bucket, up, down, granularity from review_timeline_cache where appid = $1 order by bucket',
+      [appid],
+    ),
+    run<{
+      id: string;
+      outlet: string;
+      title: string;
+      summary: string | null;
+      url: string;
+      published_at: Date;
+    }>(
+      `select a.id::text, a.outlet, a.title, a.summary, a.url, a.published_at
+       from article_games ag join articles a on a.id = ag.article_id
+       where ag.appid = $1 order by a.published_at desc limit 20`,
+      [appid],
+    ),
+  ]);
+
   const found = game.rows[0];
   if (found === undefined) return undefined;
-
-  const timeline = await run<{ month: string; up: number; down: number }>(
-    'select month, up, down from review_timeline_cache where appid = $1 order by month',
-    [appid],
-  );
-
-  const articles = await run<{
-    id: string;
-    outlet: string;
-    title: string;
-    summary: string | null;
-    url: string;
-    published_at: Date;
-  }>(
-    `select a.id::text, a.outlet, a.title, a.summary, a.url, a.published_at
-     from article_games ag join articles a on a.id = ag.article_id
-     where ag.appid = $1 order by a.published_at desc limit 20`,
-    [appid],
-  );
 
   return {
     appid: found.appid,
     name: found.name,
     headerImage: found.header_image,
-    months: timeline.rows.map((row) => {
+    granularity: timeline.rows[0]?.granularity ?? 'month',
+    buckets: timeline.rows.map((row) => {
       const total = row.up + row.down;
       return {
-        month: row.month,
+        bucket: row.bucket,
         up: row.up,
         down: row.down,
         positiveShare: total === 0 ? 0 : row.up / total,

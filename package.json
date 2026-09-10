@@ -63,6 +63,7 @@
     "./db": "./dist/db/queries.js",
     "./db/pool": "./dist/db/pool.js",
     "./db/analyses": "./dist/db/analyses.js",
-    "./images": "./dist/steam/images.js"
+    "./images": "./dist/steam/images.js",
+    "./analysis": "./dist/analysis/drops.js"
   }
 }

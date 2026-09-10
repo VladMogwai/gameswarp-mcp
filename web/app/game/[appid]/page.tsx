@@ -11,20 +11,20 @@ const DROP_THRESHOLD = 0.05;
  * A sparkline drawn as SVG rather than pulled from a charting library: one path,
  * no client JavaScript, and it renders on the server with the rest of the page.
  */
-function Timeline({ months }: { months: { month: string; positiveShare: number }[] }) {
-  if (months.length < 2) return null;
+function Timeline({ buckets }: { buckets: { bucket: string; positiveShare: number }[] }) {
+  if (buckets.length < 2) return null;
   const width = 800;
   const height = 140;
-  const points = months
+  const points = buckets
     .map((point, index) => {
-      const x = (index / (months.length - 1)) * width;
+      const x = (index / (buckets.length - 1)) * width;
       const y = height - point.positiveShare * height;
       return `${x.toFixed(1)},${y.toFixed(1)}`;
     })
     .join(' ');
 
-  const first = months[0]!.month.slice(0, 4);
-  const last = months[months.length - 1]!.month.slice(0, 4);
+  const first = buckets[0]!.bucket.slice(0, 4);
+  const last = buckets[buckets.length - 1]!.bucket.slice(0, 4);
 
   return (
     <svg viewBox={`0 0 ${width} ${height + 20}`} style={{ width: '100%', height: 'auto' }}>
@@ -48,8 +48,8 @@ export default async function GamePage({ params }: { params: Promise<{ appid: st
 
   // Months where the positive share fell against the one before. This is the
   // arithmetic the whole product rests on, and it needs no model at all.
-  const drops = game.months
-    .map((point, index) => ({ point, previous: game.months[index - 1] }))
+  const drops = game.buckets
+    .map((point, index) => ({ point, previous: game.buckets[index - 1] }))
     .filter(
       (entry) =>
         entry.previous !== undefined &&
@@ -71,20 +71,24 @@ export default async function GamePage({ params }: { params: Promise<{ appid: st
       />
       <h1>{game.name}</h1>
       <p className="muted">
-        {game.months.length > 0
-          ? `${game.months.length} months of review history`
+        {game.buckets.length > 0
+          ? `${game.buckets.length} ${game.granularity}s of review history`
           : 'No rating history collected yet'}
       </p>
 
-      <Timeline months={game.months} />
+      <Timeline buckets={game.buckets} />
 
       {drops.length > 0 && (
         <>
           <h2>Where the rating fell</h2>
           {drops.slice(0, 6).map((drop) => (
-            <div className="card" key={drop.point.month}>
+            <div className="card" key={drop.point.bucket}>
               <div className="row">
-                <span className="grow">{drop.point.month.slice(0, 7)}</span>
+                <span className="grow">
+                  {game.granularity === 'month'
+                    ? drop.point.bucket.slice(0, 7)
+                    : `week of ${drop.point.bucket}`}
+                </span>
                 <span className="num">
                   <span className="muted">
                     {(drop.previous!.positiveShare * 100).toFixed(0)}%
@@ -96,7 +100,7 @@ export default async function GamePage({ params }: { params: Promise<{ appid: st
                 </span>
               </div>
               <div className="muted" style={{ marginTop: 4 }}>
-                {drop.point.up + drop.point.down} reviews that month
+                {drop.point.up + drop.point.down} reviews that {game.granularity}
               </div>
             </div>
           ))}

@@ -46,7 +46,21 @@ Rules:
   timeline and the patch notes.
 - When a tool reports a problem, read the message: it says what to do instead.
 - Stop calling tools once you can answer, and answer with specifics - dates,
-  percentages, patch names - not impressions.`;
+  percentages, patch names - not impressions.
+
+Your final answer is read by someone who did not see any of this. Write it for
+them: state what happened, when, and why. Never describe the steps you took, and
+never refer to yourself, the tools, or "the user".`;
+
+/**
+ * Pushed on the last turn, when the tools are gone. Without it a small model
+ * tends to narrate its own process - "I have already performed several steps" -
+ * and that narration is what would end up on the page.
+ */
+const FINAL_TURN =
+  'Now answer the original question directly, using only what you already found. ' +
+  'Give the specifics: the date, the name of the update, the numbers, and what ' +
+  'players said. Do not mention tools, steps, or yourself.';
 
 /**
  * The agent calls its tools directly, in process. MCP is how other people's
@@ -84,7 +98,7 @@ export async function runAgent(question: string, options: AgentOptions = {}): Pr
     // from what it already has, which by then is usually enough.
     const lastStep = step === maxSteps - 1;
     const response = await provider.chat({
-      messages,
+      messages: lastStep ? [...messages, { role: 'user', content: FINAL_TURN }] : messages,
       ...(lastStep ? {} : { tools: definitions }),
     });
     inputTokens += response.inputTokens ?? 0;

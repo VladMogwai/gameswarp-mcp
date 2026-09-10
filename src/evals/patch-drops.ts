@@ -34,7 +34,7 @@ export async function buildCases(appids: number[], names: Map<number, string>): 
   for (const appid of appids) {
     try {
       const timeline = await fetchReviewTimeline(appid);
-      const months = timeline.months;
+      const months = timeline.buckets;
       if (months.length < 6) {
         rejected.push({ appid, reason: 'too little history' });
         continue;

@@ -99,10 +99,12 @@ export const TOOLS: Tool[] = [
   {
     name: 'get_review_timeline',
     description:
-      'Finds when a rating moved. By default returns only the months where the positive ' +
-      'share shifted by 3 points or more, which is what you want when looking for a drop; ' +
-      'pass all_months to see every month, or since and until to look at one period. ' +
-      'Cheap and covers the whole history, unlike get_reviews.',
+      'Finds when a rating moved. Buckets are monthly for older games and weekly for ' +
+      'recent ones - the header says which, so read the labels rather than assuming. ' +
+      'By default returns only the buckets where the positive share shifted by 3 points ' +
+      'or more, which is what you want when looking for a drop; pass all_months to see ' +
+      'every bucket, or since and until to look at one period. Cheap and covers the whole ' +
+      'history, unlike get_reviews.',
     shape: timelineArgs.shape,
     parameters: jsonSchemaOf(timelineArgs.shape),
     async run(raw) {
@@ -113,7 +115,7 @@ export const TOOLS: Tool[] = [
           fetchReviewTimeline(appid),
           fetchReviewSummary(appid),
         ]);
-        if (timeline.months.length === 0) {
+        if (timeline.buckets.length === 0) {
           throw new ToolInputError(
             `App ${appid} has no review history. Either the appid is wrong - check it with ` +
               `search_games - or nobody has reviewed it yet.`,
@@ -122,7 +124,7 @@ export const TOOLS: Tool[] = [
 
         const since = args.since === undefined ? undefined : new Date(args.since);
         const until = args.until === undefined ? undefined : new Date(args.until);
-        const inWindow = timeline.months.filter(
+        const inWindow = timeline.buckets.filter(
           (point) =>
             (since === undefined || point.date >= since) &&
             (until === undefined || point.date < until),
@@ -132,9 +134,12 @@ export const TOOLS: Tool[] = [
         // question. Unless asked for everything, keep the months that moved and
         // the ones on either side, which is what makes a drop readable.
         const keep = args.all_months === true ? inWindow : notable(inWindow);
+        // A week bucket labelled as a month would read as a whole month of data.
+        const label = (point: { date: Date }): string =>
+          timeline.granularity === 'month' ? isoDay(point.date).slice(0, 7) : isoDay(point.date);
         const lines = keep.map(
           (point) =>
-            `${isoDay(point.date).slice(0, 7)}  ${(point.positiveShare * 100).toFixed(0)}%` +
+            `${label(point)}  ${(point.positiveShare * 100).toFixed(0)}%` +
             `  (+${point.up} / -${point.down})`,
         );
         const omitted = inWindow.length - keep.length;
@@ -142,8 +147,8 @@ export const TOOLS: Tool[] = [
         return (
           `Overall: ${summary.totalPositive} positive, ${summary.totalNegative} negative` +
           ` - ${summary.scoreDescription}\n` +
-          `${inWindow.length} months on record` +
-          (omitted > 0 ? `, ${omitted} steady ones omitted; pass all_months for every month` : '') +
+          `${inWindow.length} ${timeline.granularity}s on record` +
+          (omitted > 0 ? `, ${omitted} steady ones omitted; pass all_months for every bucket` : '') +
           `\n\n` +
           budgeted(lines, 'Narrow with since and until.')
         );

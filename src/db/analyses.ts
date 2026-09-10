@@ -96,20 +96,22 @@ export async function loadAnalyses(
 
 export async function saveTimeline(
   appid: number,
-  months: { date: Date; up: number; down: number }[],
+  buckets: { date: Date; up: number; down: number }[],
+  granularity: 'week' | 'month',
 ): Promise<void> {
-  if (months.length === 0) return;
+  if (buckets.length === 0) return;
   const values: unknown[] = [];
-  const rows = months.map((month, index) => {
-    values.push(appid, month.date, month.up, month.down);
-    const offset = index * 4;
-    return `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4})`;
+  const rows = buckets.map((bucket, index) => {
+    values.push(appid, bucket.date, bucket.up, bucket.down, granularity);
+    const offset = index * 5;
+    return `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5})`;
   });
   await query(
-    `insert into review_timeline_cache (appid, month, up, down)
+    `insert into review_timeline_cache (appid, bucket, up, down, granularity)
      values ${rows.join(', ')}
-     on conflict (appid, month) do update set
-       up = excluded.up, down = excluded.down, fetched_at = now()`,
+     on conflict (appid, bucket) do update set
+       up = excluded.up, down = excluded.down,
+       granularity = excluded.granularity, fetched_at = now()`,
     values,
   );
 }

@@ -74,6 +74,19 @@ the feed, games, links and finished analyses; raw reviews and full patch notes
 stay local, where they are fetched on demand and cached to disk, because they are
 three orders of magnitude larger.
 
+## Which model answers
+
+Nothing above `src/model` names a provider; the environment decides, and the
+split is deliberate:
+
+| | Provider | Why |
+|---|---|---|
+| Scheduled work | hosted, OpenAI-compatible | a scheduled job cannot reach a laptop, and a laptop should not be the compute for background work |
+| Evals and iteration | local, through Ollama | dozens of runs in a row would exhaust a free tier's daily budget in one sitting |
+
+See `.env.example`. Adding another vendor is a file beside `src/model/ollama.ts`
+and a case in the factory; nothing else changes.
+
 ## Development
 
 ```bash

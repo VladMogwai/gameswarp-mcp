@@ -15,6 +15,8 @@ concurrency:
 jobs:
   tick:
     runs-on: ubuntu-latest
+    env:
+      MODEL_API_KEY: ${{ secrets.MODEL_API_KEY }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -27,3 +29,16 @@ jobs:
       - run: node scripts/tick.mjs
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      # Explaining rating falls needs a model, and a scheduled job cannot reach
+      # the one on a laptop. Skipped rather than failed when no key is set, so
+      # collection keeps working on its own.
+      - name: explain rating drops
+        if: ${{ env.MODEL_API_KEY != '' }}
+        run: node scripts/analyse-drops.mjs 4
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          MODEL_PROVIDER: openai-compatible
+          MODEL_NAME: openai/gpt-oss-20b
+          MODEL_BASE_URL: https://api.groq.com/openai/v1
+          MODEL_API_KEY: ${{ secrets.MODEL_API_KEY }}

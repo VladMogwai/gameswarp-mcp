@@ -1,10 +1,12 @@
 // Runs the patch-drop eval. Usage: node scripts/run-eval.mjs [model]
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { runEval } from '../dist/evals/runner.js';
-import { ollamaProvider } from '../dist/model/index.js';
+import { defaultProvider, ollamaProvider } from '../dist/model/index.js';
 import { closePool } from '../dist/db/pool.js';
 
-const model = process.argv[2] ?? 'gemma4-local';
+const forced = process.argv[2];
+const provider = forced === undefined ? defaultProvider() : ollamaProvider({ model: forced });
+const model = provider.id;
 const cases = JSON.parse(readFileSync('evals/datasets/patch-drops.json', 'utf8'));
 console.log(`model: ${model}, cases: ${cases.length}\n`);
 
@@ -16,7 +18,7 @@ const partial = [];
 // Written after every case: a run that dies at the tenth should not cost the
 // nine that already worked.
 const report = await runEval(cases, {
-  provider: ollamaProvider({ model }),
+  provider,
   onCase: (r) => {
     partial.push(r);
     writeFileSync(path, JSON.stringify(partial, null, 2) + '\n');
