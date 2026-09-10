@@ -29,7 +29,13 @@ console.log(`timelines cached for ${cached}/${discussed.length} games in the new
 const drops = await findDrops(limit);
 console.log(`drops to explain: ${drops.length}, model ${provider.id}\n`);
 
-for (const drop of drops) {
+// One analysis is several turns and thousands of tokens; a free tier meters by
+// the minute, so firing them back to back spends the whole budget on the first
+// two and then waits anyway. Pausing between them is cheaper than retrying.
+const PAUSE_MS = provider.local ? 0 : 20_000;
+
+for (const [index, drop] of drops.entries()) {
+  if (index > 0 && PAUSE_MS > 0) await new Promise((r) => setTimeout(r, PAUSE_MS));
   const result = await analyseDrop(drop, { provider });
   const shift = `${(drop.shareBefore * 100).toFixed(0)}%->${(drop.shareAfter * 100).toFixed(0)}%`;
   const period = drop.granularity === 'month' ? drop.bucket.slice(0, 7) : drop.bucket;

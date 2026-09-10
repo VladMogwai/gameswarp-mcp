@@ -39,21 +39,57 @@ export function openAICompatibleProvider(options: {
 }): ModelProvider {
   const id = options.id;
 
-  async function post(body: Record<string, unknown>): Promise<RawChatResponse> {
-    const response = await fetch(`${options.baseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${options.apiKey}`,
-      },
-      body: JSON.stringify({ ...body, model: options.model }),
-      signal: AbortSignal.timeout(options.timeoutMs ?? 120_000),
-    });
-    const payload = (await response.json()) as RawChatResponse;
-    if (!response.ok || payload.error !== undefined) {
-      throw new ModelError(id, payload.error?.message ?? `HTTP ${response.status}`);
+  /**
+   * Retried for two reasons that both look like errors but are not faults of the
+   * caller. Free tiers meter by tokens per minute and answer 429 when a burst
+   * arrives, and a model occasionally emits tool arguments the vendor itself
+   * cannot parse - a bad sample, not a bad request. Both come right on a repeat.
+   */
+  function isTransient(status: number, message: string): boolean {
+    if (status === 429 || status >= 500) return true;
+    return /parse tool call|tool.call.*json/i.test(message);
+  }
+
+  /**
+   * A rate limiter knows exactly when it will let you back in, and says so - in
+   * the Retry-After header, or failing that in the prose of the error. Guessing
+   * an exponential backoff instead means either waiting far too long or giving
+   * up a second before the door opens, which is what happened here: the limit
+   * asked for 4.8 seconds and a doubling backoff ran out of attempts first.
+   */
+  function waitFor(response: Response, message: string, attempt: number): number {
+    const header = response.headers.get('retry-after');
+    if (header !== null) {
+      const seconds = Number.parseFloat(header);
+      if (Number.isFinite(seconds)) return seconds * 1000 + 250;
     }
-    return payload;
+    const stated = /try again in ([0-9.]+)\s*s/i.exec(message);
+    if (stated?.[1] !== undefined) return Number.parseFloat(stated[1]) * 1000 + 250;
+    return 2_000 * 2 ** attempt;
+  }
+
+  async function post(body: Record<string, unknown>): Promise<RawChatResponse> {
+    let lastMessage = 'unknown error';
+    let wait = 0;
+    for (let attempt = 0; attempt < 6; attempt++) {
+      if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
+      const response = await fetch(`${options.baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${options.apiKey}`,
+        },
+        body: JSON.stringify({ ...body, model: options.model }),
+        signal: AbortSignal.timeout(options.timeoutMs ?? 120_000),
+      });
+      const payload = (await response.json()) as RawChatResponse;
+      if (response.ok && payload.error === undefined) return payload;
+
+      lastMessage = payload.error?.message ?? `HTTP ${response.status}`;
+      if (!isTransient(response.status, lastMessage)) break;
+      wait = waitFor(response, lastMessage, attempt);
+    }
+    throw new ModelError(id, lastMessage);
   }
 
   return {

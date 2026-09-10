@@ -1,3 +1,4 @@
+import { loadEnvFile } from '../config/env.js';
 import { ollamaProvider } from './ollama.js';
 import { openAICompatibleProvider } from './openai-compatible.js';
 import type { ModelProvider } from './types.js';
@@ -27,6 +28,9 @@ export {
  *     MODEL_BASE_URL=https://api.groq.com/openai/v1  MODEL_API_KEY=...
  */
 export function defaultProvider(): ModelProvider {
+  // Loading the file here as well as in the pool: which module happens to be
+  // imported first should not decide whether configuration is visible.
+  loadEnvFile();
   const kind = process.env['MODEL_PROVIDER'] ?? 'ollama';
   const model = process.env['MODEL_NAME'] ?? 'gemma4:12b';
 
@@ -37,9 +41,13 @@ export function defaultProvider(): ModelProvider {
 
   if (kind === 'openai-compatible') {
     const baseUrl = process.env['MODEL_BASE_URL'];
-    const apiKey = process.env['MODEL_API_KEY'];
-    if (baseUrl === undefined || apiKey === undefined) {
-      throw new Error('MODEL_BASE_URL and MODEL_API_KEY are required for openai-compatible');
+    // Vendors hand out keys under their own name and people store them that way.
+    // Accepting both saves renaming a secret to satisfy an abstraction.
+    const apiKey = process.env['MODEL_API_KEY'] ?? process.env['GROQ_API_KEY'];
+    if (baseUrl === undefined || apiKey === undefined || apiKey.length === 0) {
+      throw new Error(
+        'openai-compatible needs MODEL_BASE_URL and a key in MODEL_API_KEY or GROQ_API_KEY',
+      );
     }
     return openAICompatibleProvider({ id: `openai-compatible:${model}`, baseUrl, apiKey, model });
   }
