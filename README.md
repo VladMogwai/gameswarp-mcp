@@ -58,6 +58,22 @@ Every review carries the hours its author had played at the moment of writing.
 A review with 300 hours behind it and one with 15 minutes are different kinds of
 evidence, and `min_playtime_hours` exists to separate them.
 
+## Collecting articles
+
+`npm run tick` applies migrations, polls every source and resolves new game names.
+Every step is idempotent, so running it repeatedly is safe and cheap: sources that
+have not changed answer 304 with no body, and only names never seen before cost a
+Steam lookup.
+
+It runs hourly on GitHub Actions against a hosted database. Hourly is not
+arbitrary - the tightest feed holds about five hours of articles, and anything
+slower loses items permanently.
+
+Set `DATABASE_URL` as a repository secret to enable it. The hosted database holds
+the feed, games, links and finished analyses; raw reviews and full patch notes
+stay local, where they are fetched on demand and cached to disk, because they are
+three orders of magnitude larger.
+
 ## Development
 
 ```bash

@@ -38,8 +38,7 @@
     "acceptance": "npm run build && node scripts/acceptance.mjs",
     "start": "node dist/index.js",
     "prepublishOnly": "npm run lint:lang && npm run typecheck && npm test && npm run build",
-    "ingest": "npm run build && node -e \"import('./dist/sources/ingest.js').then(async m => { console.table(await m.ingestAll()); process.exit(0); })\"",
-    "resolve": "npm run build && node -e \"import('./dist/resolve/categories.js').then(async m => { console.log(await m.resolveCategories()); process.exit(0); })\""
+    "tick": "npm run build && node scripts/tick.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
