@@ -152,10 +152,19 @@ export async function gamesDiscussed(days = 7, limit = 20): Promise<DiscussedGam
   }));
 }
 
+export interface DropAnalysis {
+  periodStart: string;
+  answer: string;
+  model: string;
+  createdAt: Date;
+}
+
 export interface GamePage {
   appid: number;
   name: string;
   headerImage: string | null;
+  /** Keyed by the first day of the bucket the analysis is about. */
+  analyses: Record<string, DropAnalysis>;
   buckets: { bucket: string; up: number; down: number; positiveShare: number }[];
   granularity: 'week' | 'month';
   articles: FeedItem[];
@@ -167,7 +176,7 @@ export interface GamePage {
  * cost three times the latency for no reason.
  */
 export async function gamePage(appid: number): Promise<GamePage | undefined> {
-  const [game, timeline, articles] = await Promise.all([
+  const [game, timeline, articles, analyses] = await Promise.all([
     run<{ appid: number; name: string; header_image: string | null }>(
       'select appid, name, header_image from games where appid = $1',
       [appid],
@@ -189,6 +198,13 @@ export async function gamePage(appid: number): Promise<GamePage | undefined> {
        where ag.appid = $1 order by a.published_at desc limit 20`,
       [appid],
     ),
+    run<{ period_start: string; answer: string; model: string; created_at: Date }>(
+      `select distinct on (period_start) period_start, answer, model, created_at
+       from analyses
+       where appid = $1 and kind = 'drop' and language = 'en'
+       order by period_start, created_at desc`,
+      [appid],
+    ),
   ]);
 
   const found = game.rows[0];
@@ -198,6 +214,17 @@ export async function gamePage(appid: number): Promise<GamePage | undefined> {
     appid: found.appid,
     name: found.name,
     headerImage: found.header_image,
+    analyses: Object.fromEntries(
+      analyses.rows.map((row) => [
+        row.period_start,
+        {
+          periodStart: row.period_start,
+          answer: row.answer,
+          model: row.model,
+          createdAt: row.created_at,
+        },
+      ]),
+    ),
     granularity: timeline.rows[0]?.granularity ?? 'month',
     buckets: timeline.rows.map((row) => {
       const total = row.up + row.down;

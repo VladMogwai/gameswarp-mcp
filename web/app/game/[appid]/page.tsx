@@ -102,6 +102,15 @@ export default async function GamePage({ params }: { params: Promise<{ appid: st
               <div className="muted" style={{ marginTop: 4 }}>
                 {drop.point.up + drop.point.down} reviews that {game.granularity}
               </div>
+              {game.analyses[drop.point.bucket] !== undefined && (
+                <div className="analysis">
+                  <p>{game.analyses[drop.point.bucket]!.answer}</p>
+                  <div className="muted">
+                    Written by {game.analyses[drop.point.bucket]!.model} from the reviews and
+                    patch notes of that period
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </>

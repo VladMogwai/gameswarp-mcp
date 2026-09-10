@@ -69,3 +69,14 @@ h2 { font-size: 17px; font-weight: 500; margin: 32px 0 12px; }
 .cover-row { width: 116px; height: 44px; flex: 0 0 auto; }
 .cover-hero { width: 100%; max-width: 460px; height: auto; aspect-ratio: 460 / 215; margin: 8px 0 4px; border-radius: 10px; }
 .with-cover { display: flex; align-items: center; gap: 12px; }
+
+.analysis {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.analysis p {
+  margin: 0 0 8px;
+  white-space: pre-wrap;
+}
+.analysis .muted { font-size: 12px; }
