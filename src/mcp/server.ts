@@ -138,16 +138,19 @@ export function buildServer(): McpServer {
       inputSchema: {
         appid: z.number().int().positive(),
         kind: z.enum(['patches', 'press', 'all']).optional(),
-        since: z.string().optional().describe('ISO date; only items published after it'),
+        since: z.string().optional().describe('ISO date; only items published on or after it'),
+        until: z.string().optional().describe('ISO date; only items published before it'),
         limit: z.number().int().min(1).max(100).optional(),
       },
     },
-    async ({ appid, kind, since, limit }) => {
+    async ({ appid, kind, since, until, limit }) => {
       try {
         const sinceDate = since === undefined ? undefined : new Date(since);
+        const untilDate = until === undefined ? undefined : new Date(until);
         const wanted = kind ?? 'all';
         const items = (await fetchNews(appid))
           .filter((item) => (sinceDate === undefined ? true : item.date >= sinceDate))
+          .filter((item) => (untilDate === undefined ? true : item.date < untilDate))
           .filter((item) =>
             wanted === 'all'
               ? true
@@ -157,7 +160,12 @@ export function buildServer(): McpServer {
           )
           .slice(0, limit ?? 30);
 
-        if (items.length === 0) return failed(`No ${wanted} news for app ${appid} in that range.`);
+        if (items.length === 0) {
+          return failed(
+            `No ${wanted} news for app ${appid} in that range. Steam keeps only what the ` +
+              `developer published, so an old window may genuinely be empty; widen it or drop kind.`,
+          );
+        }
         return ok(
           budgeted(
             items.map(
