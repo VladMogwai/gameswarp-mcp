@@ -2,7 +2,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { ollamaProvider } from '../src/model/ollama.js';
 import { openAICompatibleProvider } from '../src/model/openai-compatible.js';
-import { ModelError } from '../src/model/types.js';
+import { ModelError , normaliseToolCall } from '../src/model/types.js';
 
 const schema = z.object({ sameEvent: z.boolean(), reason: z.string() });
 
@@ -82,5 +82,31 @@ describe('openAICompatibleProvider', () => {
     });
     expect(provider.local).toBe(false);
     expect(ollamaProvider({ model: 'test' }).local).toBe(true);
+  });
+});
+
+describe('chat with tools', () => {
+  it('normalises tool calls whose arguments arrive as an object', () => {
+    const call = normaliseToolCall({ name: 'get_x', arguments: { appid: 1 } });
+    expect(call.name).toBe('get_x');
+    expect(call.arguments).toEqual({ appid: 1 });
+  });
+
+  it('normalises tool calls whose arguments arrive as a JSON string', () => {
+    expect(normaliseToolCall({ name: 'a', arguments: '{"appid":2}' }).arguments).toEqual({
+      appid: 2,
+    });
+  });
+
+  it('survives malformed argument JSON rather than throwing', () => {
+    expect(normaliseToolCall({ name: 'a', arguments: '{not json' }).arguments).toEqual({});
+  });
+
+  it('invents an id when the provider omits one, so calls stay addressable', () => {
+    expect(normaliseToolCall({ name: 'a', arguments: {} }).id).toMatch(/^call_/);
+  });
+
+  it('keeps the id when the provider supplies one', () => {
+    expect(normaliseToolCall({ id: 'call_abc', name: 'a', arguments: {} }).id).toBe('call_abc');
   });
 });

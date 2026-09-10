@@ -6,9 +6,15 @@ export { ollamaProvider } from './ollama.js';
 export { openAICompatibleProvider } from './openai-compatible.js';
 export {
   ModelError,
+  normaliseToolCall,
+  type ChatMessage,
+  type ChatRequest,
+  type ChatResponse,
   type CompletionRequest,
   type CompletionResponse,
   type ModelProvider,
+  type ToolCall,
+  type ToolDefinition,
 } from './types.js';
 
 /**
