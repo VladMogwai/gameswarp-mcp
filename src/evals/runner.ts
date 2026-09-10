@@ -96,8 +96,12 @@ export async function runEval(
   for (const testCase of cases) {
     let run: AgentRun;
     try {
+      const period =
+        testCase.granularity === 'month'
+          ? testCase.bucket.slice(0, 7)
+          : `the week of ${testCase.bucket}`;
       run = await runAgent(
-        `Why did ${testCase.game} ratings drop in ${testCase.month}? Name the update responsible and its date.`,
+        `Why did ${testCase.game} ratings drop in ${period}? Name the update responsible and its date.`,
         { provider },
       );
     } catch (error) {

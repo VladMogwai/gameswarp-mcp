@@ -95,6 +95,10 @@ npm run dev          # tsc --watch
 npm test             # unit tests, offline
 npm run inspect      # build and open the MCP Inspector
 npm run acceptance   # end-to-end over stdio, needs network and the database
+
+node scripts/build-dataset.mjs        # rebuild the eval dataset from Steam
+node scripts/run-eval.mjs             # run it; resumes where it stopped
+node scripts/run-eval.mjs '' --fresh  # start over instead of resuming
 docker compose up -d && npm run db:migrate
 ```
 
