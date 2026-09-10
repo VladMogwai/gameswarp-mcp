@@ -23,16 +23,16 @@ const SEED = [
 const names = new Map(SEED.map(([id, name]) => [id, name]));
 const { cases, rejected } = await buildCases(SEED.map(([id]) => id), names);
 
-console.log(`случаев: ${cases.length}, отброшено: ${rejected.length}\n`);
+console.log(`cases: ${cases.length}, rejected: ${rejected.length}\n`);
 for (const c of cases) {
-  console.log(`  ${c.game.padEnd(26)} ${c.month}  ${c.shareBefore}% -> ${c.shareAfter}%  (${c.reviewsInMonth} отз.)`);
+  console.log(`  ${c.game.padEnd(26)} ${c.month}  ${c.shareBefore}% -> ${c.shareAfter}%  (${c.reviewsInMonth} reviews)`);
   console.log(`  ${' '.repeat(26)} ${c.patchDate}  ${c.patchTitle.slice(0, 60)}`);
 }
 
 const reasons = {};
 for (const r of rejected) reasons[r.reason.replace(/\d+/g, 'N')] = (reasons[r.reason.replace(/\d+/g, 'N')] ?? 0) + 1;
-console.log('\nпричины отбраковки:', JSON.stringify(reasons));
+console.log('\nrejection reasons:', JSON.stringify(reasons));
 
 writeFileSync('evals/datasets/patch-drops.json', JSON.stringify(cases, null, 2) + '\n');
-console.log(`\nзаписано в evals/datasets/patch-drops.json`);
+console.log('\nwritten to evals/datasets/patch-drops.json');
 await closePool();
